@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vm_ui/core/ui_kit/colors.dart';
+import 'package:vm_ui/core/ui_kit/themes/colors.dart';
 
 /// The supported sizes for [VMButton].
 enum VMButtonSize { large, medium, small }

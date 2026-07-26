@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vm_ui/core/ui_kit/buttons/buttons.dart';
-import 'package:vm_ui/core/ui_kit/colors.dart';
+import 'package:vm_ui/core/ui_kit/themes/colors.dart';
 
 void main() {
   Widget buildButton(VMButton button) {

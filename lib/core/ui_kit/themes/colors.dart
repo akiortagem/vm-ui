@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 class VMColorTheme {
   VMColorTheme._();
 
+  //Neutrals
+  static const Color neutral = Color(0xFFFFFFFF);
+
   //YELLOWS
   static const Color yellow10 = Color(0xFFFDF6E8);
   static const Color yellow20 = Color(0xFFFAECD1);

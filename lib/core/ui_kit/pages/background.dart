@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vm_ui/core/ui_kit/colors.dart';
+import 'package:vm_ui/core/ui_kit/themes/colors.dart';
 
 class VMPageBackground extends StatelessWidget {
   const VMPageBackground({super.key, this.child});

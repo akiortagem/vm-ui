@@ -59,7 +59,13 @@ flutter:
   uses-material-design: true
 
   assets:
+    - lib/core/ui_kit/assets/img/LOGO.svg
     - lib/core/ui_kit/assets/img/swirls.svg
+
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: lib/core/ui_kit/assets/fonts/Figtree-Variable.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
