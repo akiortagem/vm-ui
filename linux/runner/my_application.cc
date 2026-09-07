@@ -1,5 +1,7 @@
 #include "my_application.h"
 
+#include <cstdlib>
+#include <cstring>
 #include <flutter_linux/flutter_linux.h>
 #include "flutter/generated_plugin_registrant.h"
 
@@ -24,7 +26,12 @@ static void my_application_activate(GApplication* application) {
 
   gtk_window_set_title(window, "vm_ui");
   gtk_window_set_decorated(window, FALSE);
-  gtk_window_set_default_size(window, 1080, 1920);
+  gtk_window_set_default_size(window, 540, 960);
+
+  const char* kiosk_mode = std::getenv("VM_UI_KIOSK_MODE");
+  if (kiosk_mode != nullptr && std::strcmp(kiosk_mode, "1") == 0) {
+    gtk_window_fullscreen(window);
+  }
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);

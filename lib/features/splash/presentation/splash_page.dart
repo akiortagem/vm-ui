@@ -4,6 +4,7 @@ import 'package:vm_ui/core/ui_kit/buttons/buttons.dart';
 import 'package:vm_ui/core/ui_kit/containers/footer_content.dart';
 import 'package:vm_ui/core/ui_kit/pages/background.dart';
 import 'package:vm_ui/core/ui_kit/themes/typography.dart';
+import 'package:vm_ui/features/splash/presentation/widgets/hero_dishes.dart';
 
 class SplashPage extends StatelessWidget {
   const SplashPage({super.key});
@@ -22,6 +23,11 @@ class SplashPage extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
+          SvgPicture.asset(
+            'lib/core/ui_kit/assets/img/circles.svg',
+            key: const ValueKey('splash-circles'),
+            fit: BoxFit.cover,
+          ),
           Positioned(
             top: screenSize.height * 0.0625,
             left: 0,
@@ -31,6 +37,34 @@ class SplashPage extends StatelessWidget {
                 'lib/core/ui_kit/assets/img/LOGO.svg',
                 key: const ValueKey('splash-logo'),
                 width: screenSize.width * (425 / 1080),
+              ),
+            ),
+          ),
+          Positioned(
+            top: screenSize.height * 0.18,
+            bottom: footerHeight,
+            left: 0,
+            right: 0,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: screenSize.width,
+                child: HeroDishes(
+                  edgeOverflow: screenSize.width * 0.032,
+                  // Test images only. Replace these with the actual dish data.
+                  dishes: [
+                    Image.asset(
+                      'lib/core/ui_kit/assets/test_img/nasi_goreng.png',
+                      key: const ValueKey('test-nasi-goreng'),
+                      width: screenSize.width * 0.72,
+                    ),
+                    Image.asset(
+                      'lib/core/ui_kit/assets/test_img/mie_goreng.png',
+                      key: const ValueKey('test-mie-goreng'),
+                      width: screenSize.width * 0.72,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

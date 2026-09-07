@@ -60,7 +60,10 @@ flutter:
 
   assets:
     - lib/core/ui_kit/assets/img/LOGO.svg
+    - lib/core/ui_kit/assets/img/circles.svg
     - lib/core/ui_kit/assets/img/swirls.svg
+    - lib/core/ui_kit/assets/test_img/mie_goreng.png
+    - lib/core/ui_kit/assets/test_img/nasi_goreng.png
 
   fonts:
     - family: Figtree

@@ -55,7 +55,7 @@ void main() {
     expect(swirls.fit, BoxFit.cover);
   });
 
-  testWidgets('splash footer fits a compact logical screen', (tester) async {
+  testWidgets('compact host scales the fixed design canvas', (tester) async {
     tester.view.physicalSize = const Size(360, 640);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -63,10 +63,14 @@ void main() {
 
     await tester.pumpWidget(const VmUiApp());
 
+    expect(
+      MediaQuery.sizeOf(tester.element(find.byType(SplashPage))),
+      const Size(1080, 1920),
+    );
     expect(tester.takeException(), isNull);
     expect(
       tester.getSize(find.byType(VMFooterContent)).height,
-      closeTo(89.6, 0.001),
+      closeTo(268.8, 0.001),
     );
   });
 }
