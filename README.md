@@ -69,11 +69,31 @@ before this command starts.
 
 ## Build and run on a Windows kiosk
 
-Build the Windows release:
+### Build machine requirements
+
+Build on Windows with the Flutter SDK and Visual Studio installed. In Visual
+Studio Installer, select **Desktop development with C++**, including its Windows
+SDK and C++ build tools. Also install the **C++ ATL for latest build tools
+(x86 & x64)** individual component required by `flutter_secure_storage`.
+See [Flutter Windows setup](https://docs.flutter.dev/platform-integration/windows/setup)
+and the [Windows secure-storage plugin requirements](https://pub.dev/packages/flutter_secure_storage_windows/versions/4.1.0).
+
+Validate the toolchain, install dependencies, and build with the API base URL:
 
 ```powershell
-flutter build windows --release
+flutter doctor -v
+flutter pub get
+flutter build windows --release --dart-define=API_BASE_URL=https://cms.example.com/api
 ```
+
+Replace the example URL with the actual API base URL, including its route prefix.
+`API_BASE_URL` is a build-time setting; changing it requires rebuilding the app.
+
+### Kiosk requirements and launch
+
+Install the Microsoft Visual C++ Redistributable matching the build architecture
+(x64 for the output below). The kiosk does not need Flutter, Visual Studio, or
+C++ ATL development tools. See [Flutter Windows deployment requirements](https://docs.flutter.dev/platform-integration/windows/building#building-your-own-zip-file-for-windows).
 
 The release output is generated under:
 
@@ -102,3 +122,78 @@ Remove-Item Env:VM_UI_KIOSK_MODE
 ```bash
 flutter test
 ```
+
+## API client
+
+`lib/core/network/api_client.dart` provides JSON GET, POST, PUT, PATCH and DELETE
+methods, plus `request` for other methods. Set the complete base URL including
+any API route prefix at build time:
+
+```bash
+flutter run -d linux --dart-define=API_BASE_URL=http://localhost:8080/api
+flutter build linux --release --dart-define=API_BASE_URL=https://cms.example.com/api
+```
+
+Initialize Flutter bindings before creating the client, and reuse one client per
+session. The following assumes imports for Flutter, dart:convert and api_client.dart:
+
+```dart
+WidgetsFlutterBinding.ensureInitialized();
+final api = await ApiClient.create(); // Restores persisted credentials.
+// After the separate pairing flow receives its response:
+await api.setCredentials(MachineCredentials(
+  machineId: machineId,
+  token: pairingResponse['token'] as String,
+  refreshToken: pairingResponse['refresh_token'] as String,
+));
+final response = await api.get('your-machine-endpoint');
+final data = jsonDecode(response.body);
+// await api.clearCredentials(); // Remove the local session when needed.
+api.close();
+```
+
+Use `authenticated: false` for public requests or explicit Authorization headers.
+Methods return `http.Response`, including empty 204 responses. Non-2xx responses
+throw `ApiException` containing the status and API error message. Transport errors,
+`TimeoutException`, and storage errors propagate. The configurable default timeout
+is 30 seconds; timing out does not guarantee cancellation of server-side work.
+
+An authenticated 401 triggers one refresh at `vending-machines/:id/refresh` and
+one replay. The backend does not distinguish expired from otherwise invalid
+access tokens in its 401 responses. Concurrent requests share a refresh; rejected
+refresh credentials clear the session and require pairing again. Network and
+server failures are not retried.
+
+Machine ID and both tokens persist together through `flutter_secure_storage`,
+scoped to the API base URL. Rotated tokens are saved automatically. Pairing screens
+and endpoint-specific services remain separate from the wrapper. Tests can inject
+an `http.Client` and `CredentialStore`.
+
+### Linux secure storage
+
+Install the native build dependency on Ubuntu/Debian:
+
+```bash
+sudo apt-get install libsecret-1-dev
+```
+
+Deployed kiosks require `libsecret-1-0` and an available, unlocked Secret Service
+keyring (such as GNOME Keyring) in the kiosk user's desktop session. Credentials
+belong to that operating-system user. See the
+[secure-storage documentation](https://pub.dev/packages/flutter_secure_storage)
+for platform setup details.
+
+### Windows secure storage
+
+The Windows plugin uses Windows Credential Manager to protect encryption keys
+and stores encrypted token data in the application's support directory. No
+separate keyring package is required. See the
+[Windows storage implementation](https://pub.dev/packages/flutter_secure_storage_windows/versions/4.1.0).
+
+Run the kiosk under the same Windows user account across restarts, and preserve
+that user's application data and stored credentials during updates. Pair the
+machine under its intended kiosk account; copying the release bundle alone does
+not transfer an existing paired session to another account or machine.
+
+Windows build and native credential persistence must be verified on Windows;
+Linux builds and mocked storage tests do not validate the Windows implementation.
