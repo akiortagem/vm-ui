@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vm_ui/features/menu_selection/presentation/menu_selection_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vm_ui/core/ui_kit/buttons/buttons.dart';
 import 'package:vm_ui/core/ui_kit/containers/footer_content.dart';
@@ -87,7 +88,11 @@ class SplashPage extends StatelessWidget {
                         children: [
                           VMButton(
                             label: 'Sentuh Untuk Memulai Pesanan',
-                            onPressed: () {},
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const MenuSelectionPage(),
+                              ),
+                            ),
                             size: VMButtonSize.large,
                             expand: true,
                           ),

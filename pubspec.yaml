@@ -59,6 +59,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - lib/core/ui_kit/assets/menu/
     - lib/core/ui_kit/assets/img/LOGO.svg
     - lib/core/ui_kit/assets/img/circles.svg
     - lib/core/ui_kit/assets/img/swirls.svg

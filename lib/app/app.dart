@@ -14,7 +14,8 @@ class VmUiApp extends StatelessWidget {
       title: AppConstants.appName,
       theme: AppTheme.light,
       debugShowCheckedModeBanner: false,
-      home: const _DesignCanvas(child: SplashPage()),
+      builder: (context, child) => _DesignCanvas(child: child!),
+      home: const SplashPage(),
     );
   }
 }

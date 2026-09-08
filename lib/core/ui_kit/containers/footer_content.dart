@@ -8,11 +8,13 @@ class VMFooterContent extends StatelessWidget {
   const VMFooterContent({
     required this.child,
     this.height,
+    this.cornerRadius = 52,
     this.padding = const EdgeInsets.symmetric(horizontal: 80, vertical: 64),
     super.key,
   });
 
   final Widget child;
+  final double cornerRadius;
 
   /// How far the footer extends upward from the bottom of its parent.
   ///
@@ -27,9 +29,9 @@ class VMFooterContent extends StatelessWidget {
       width: double.infinity,
       height: height,
       padding: padding,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(52)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(cornerRadius)),
       ),
       child: child,
     );
