@@ -1,3 +1,4 @@
+import '../../menu_fixtures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,7 +27,7 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(const VmUiApp());
+      await tester.pumpWidget(VmUiApp(loadMenu: fixtureLoadMenu));
       await tester.tap(find.text('Sentuh Untuk Memulai Pesanan'));
       await tester.pumpAndSettle();
       expect(find.byType(MenuDishCard), findsNWidgets(3));
@@ -60,10 +61,14 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.light,
-        home: MenuSelectionPage(onCheckout: (order) => checkout = order),
+        home: MenuSelectionPage(
+          loadMenu: fixtureLoadMenu,
+          onCheckout: (order) => checkout = order,
+        ),
       ),
     );
     expect(tester.widget<VMButton>(find.byType(VMButton)).onPressed, isNull);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Pesan').at(2));
     await tester.pump();
     expect(find.text('Rp 22.000'), findsNWidgets(2));
@@ -81,6 +86,7 @@ void main() {
     await tester.tap(plus);
     await tester.pump();
     expect(find.text('1'), findsOneWidget);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Pesan').first);
     await tester.pump();
     await tester.tap(find.text('Bayar Sekarang'));
@@ -89,6 +95,7 @@ void main() {
     await tester.pump();
     expect(find.text('Rp 0'), findsOneWidget);
     expect(tester.widget<VMButton>(find.byType(VMButton)).onPressed, isNull);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Pesan').first);
     await tester.pump();
     await tester.tap(find.text('Bayar Sekarang'));
@@ -107,14 +114,17 @@ void main() {
       MaterialApp(
         theme: AppTheme.light,
         home: MenuSelectionPage(
+          loadMenu: fixtureLoadMenu,
           maxSelectedItems: 2,
           quantityPerItem: 3,
           onCheckout: (order) => checkout = order,
         ),
       ),
     );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Pesan').first);
     await tester.pump();
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Pesan').first);
     await tester.pump();
     await tester.tap(find.text('Pesan'));

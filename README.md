@@ -197,3 +197,22 @@ not transfer an existing paired session to another account or machine.
 
 Windows build and native credential persistence must be verified on Windows;
 Linux builds and mocked storage tests do not validate the Windows implementation.
+
+### Optional machine credentials at launch
+
+To provision or replace the stored machine session:
+
+```bash
+flutter run -d linux \
+  --dart-define=API_BASE_URL=http://localhost:8080/api \
+  --dart-define=VM_ID=7 \
+  --dart-define=VM_ACCESS_TOKEN=your-access-token \
+  --dart-define=VM_REFRESH_TOKEN=your-refresh-token
+```
+
+The three credential settings are optional as a group. If supplying any, supply
+all three; `VM_ID` must be a positive integer. Supplied credentials replace the
+session in secure storage for the configured CMS address. Omit all three on
+subsequent runs to reuse the stored session, including rotated refresh tokens.
+These are build-time Dart defines and are embedded in the resulting app; do not
+ship a shared build containing machine credentials.

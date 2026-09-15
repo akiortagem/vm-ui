@@ -1,3 +1,4 @@
+import 'package:vm_ui/features/menu_selection/domain/load_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vm_ui/core/ui_kit/buttons/buttons.dart';
@@ -9,12 +10,15 @@ import 'package:vm_ui/features/menu_selection/presentation/widgets/menu_dish_car
 
 class MenuSelectionPage extends StatefulWidget {
   const MenuSelectionPage({
+    required this.loadMenu,
     this.onCheckout,
     this.maxSelectedItems = 1,
     this.quantityPerItem = 1,
     super.key,
   }) : assert(maxSelectedItems > 0),
        assert(quantityPerItem > 0);
+
+  final LoadMenu loadMenu;
 
   /// Maximum number of distinct dishes selected at once.
   final int maxSelectedItems;
@@ -30,6 +34,33 @@ class MenuSelectionPage extends StatefulWidget {
 
 class _MenuSelectionPageState extends State<MenuSelectionPage> {
   final List<MenuDish> _order = [];
+  List<MenuDish> _dishes = [];
+  bool _loading = true;
+  bool _failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final dishes = await widget.loadMenu();
+      if (!mounted) return;
+      setState(() {
+        _dishes = dishes;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _failed = true;
+      });
+    }
+  }
+
   @override
   void didUpdateWidget(covariant MenuSelectionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -40,6 +71,20 @@ class _MenuSelectionPageState extends State<MenuSelectionPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_failed) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(80),
+            child: Text(
+              'Terjadi gangguan. Teknisi telah dikirim.',
+              textAlign: TextAlign.center,
+              style: VMTextStyles.body.bold.copyWith(fontSize: 40),
+            ),
+          ),
+        ),
+      );
+    }
     final total = _order.fold(
       0,
       (sum, dish) => sum + dish.price * widget.quantityPerItem,
@@ -90,29 +135,44 @@ class _MenuSelectionPageState extends State<MenuSelectionPage> {
               left: 80,
               right: 80,
               bottom: 392,
-              child: Column(
-                children: [
-                  for (var index = 0; index < menuDishes.length; index++) ...[
-                    if (index > 0) const SizedBox(height: 40),
-                    MenuDishCard(
-                      dish: menuDishes[index],
-                      selected: _order.contains(menuDishes[index]),
-                      quantity: widget.quantityPerItem,
-                      onOrder:
-                          !_order.contains(menuDishes[index]) &&
-                              _order.length >= widget.maxSelectedItems
-                          ? null
-                          : () => setState(() {
-                              final dish = menuDishes[index];
-                              if (!_order.remove(dish) &&
-                                  _order.length < widget.maxSelectedItems) {
-                                _order.add(dish);
-                              }
-                            }),
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _dishes.isEmpty
+                  ? Center(
+                      child: Text(
+                        'Menu belum tersedia',
+                        style: totalStyle.copyWith(color: VMColorTheme.neutral),
+                      ),
+                    )
+                  : ListView(
+                      padding: EdgeInsets.zero,
+                      children: [
+                        for (
+                          var index = 0;
+                          index < _dishes.length;
+                          index++
+                        ) ...[
+                          if (index > 0) const SizedBox(height: 40),
+                          MenuDishCard(
+                            dish: _dishes[index],
+                            selected: _order.contains(_dishes[index]),
+                            quantity: widget.quantityPerItem,
+                            onOrder:
+                                !_order.contains(_dishes[index]) &&
+                                    _order.length >= widget.maxSelectedItems
+                                ? null
+                                : () => setState(() {
+                                    final dish = _dishes[index];
+                                    if (!_order.remove(dish) &&
+                                        _order.length <
+                                            widget.maxSelectedItems) {
+                                      _order.add(dish);
+                                    }
+                                  }),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
-              ),
             ),
             Align(
               alignment: Alignment.bottomCenter,

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
@@ -82,6 +83,9 @@ class ApiClient {
 
   static Future<ApiClient> create({
     String baseUrl = const String.fromEnvironment('API_BASE_URL'),
+    String machineId = const String.fromEnvironment('VM_ID'),
+    String token = const String.fromEnvironment('VM_ACCESS_TOKEN'),
+    String refreshToken = const String.fromEnvironment('VM_REFRESH_TOKEN'),
     http.Client? client,
     CredentialStore? credentialStore,
     Duration timeout = const Duration(seconds: 30),
@@ -97,10 +101,31 @@ class ApiClient {
     if (timeout <= Duration.zero) {
       throw ArgumentError('Timeout must be positive');
     }
+    MachineCredentials? suppliedCredentials;
+    if ([machineId, token, refreshToken].any((value) => value.isNotEmpty)) {
+      final parsedId = int.tryParse(machineId);
+      if (parsedId == null ||
+          parsedId <= 0 ||
+          token.trim().isEmpty ||
+          refreshToken.trim().isEmpty) {
+        throw ArgumentError(
+          'Provide VM_ID (positive integer), VM_ACCESS_TOKEN, and '
+          'VM_REFRESH_TOKEN together, or omit all three',
+        );
+      }
+      suppliedCredentials = MachineCredentials(
+        machineId: parsedId,
+        token: token,
+        refreshToken: refreshToken,
+      );
+    }
     final store =
         credentialStore ??
         SecureCredentialStore(key: 'vm_ui.machine_credentials.$uri');
-    final credentials = await store.read();
+    final credentials = suppliedCredentials ?? await store.read();
+    if (suppliedCredentials != null) {
+      await store.write(suppliedCredentials);
+    }
     return ApiClient._(uri, client ?? http.Client(), store, timeout)
       .._credentials = credentials;
   }
@@ -111,6 +136,9 @@ class ApiClient {
   final Duration timeout;
   MachineCredentials? _credentials;
   Future<void>? _refreshing;
+  static int _requestSequence = 0;
+
+  int? get machineId => _credentials?.machineId;
 
   bool get hasCredentials => _credentials != null;
 
@@ -277,9 +305,30 @@ class ApiClient {
     if (credentials != null) {
       request.headers['authorization'] = 'Bearer ${credentials.token}';
     }
-    return (() async => http.Response.fromStream(
-      await _http.send(request),
-    ))().timeout(timeout);
+    final requestId = ++_requestSequence;
+    // Never log headers, bodies, or query values: pairing and refresh carry secrets.
+    final destination = '${uri.origin}${uri.path}';
+    final stopwatch = Stopwatch()..start();
+    debugPrint('[CMS #$requestId] --> $method $destination');
+    try {
+      final response = await (() async => http.Response.fromStream(
+        await _http.send(request),
+      ))().timeout(timeout);
+      debugPrint(
+        '[CMS #$requestId] <-- ${response.statusCode} '
+        '$method $destination (${stopwatch.elapsedMilliseconds} ms)',
+      );
+      return response;
+    } catch (error) {
+      // Exception messages can contain full URLs or response content.
+      debugPrint(
+        '[CMS #$requestId] <-- FAILED ${error.runtimeType} '
+        '$method $destination (${stopwatch.elapsedMilliseconds} ms)',
+      );
+      rethrow;
+    } finally {
+      stopwatch.stop();
+    }
   }
 
   Future<void> _refresh(MachineCredentials credentials) async {

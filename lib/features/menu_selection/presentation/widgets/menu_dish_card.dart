@@ -42,12 +42,20 @@ class MenuDishCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
             child: Row(
               children: [
-                Image.asset(
-                  dish.imageAsset,
+                SizedBox(
                   width: 360,
                   height: 360,
-                  fit: BoxFit.cover,
-                  excludeFromSemantics: true,
+                  child: dish.imageAsset != null
+                      ? Image.asset(dish.imageAsset!, fit: BoxFit.cover)
+                      : dish.imageUrl != null
+                      ? Image.network(
+                          dish.imageUrl!,
+                          fit: BoxFit.cover,
+                          excludeFromSemantics: true,
+                          errorBuilder: (_, error, stackTrace) =>
+                              const Icon(Icons.restaurant, size: 96),
+                        )
+                      : const Icon(Icons.restaurant, size: 96),
                 ),
                 const SizedBox(width: 40),
                 Expanded(
@@ -55,15 +63,24 @@ class MenuDishCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(dish.name, style: titleStyle),
-                      const SizedBox(height: 12),
                       Text(
-                        dish.description,
-                        style: VMTextStyles.body.xL.copyWith(
-                          color: VMColorTheme.black70,
-                          height: 1.2,
-                        ),
+                        dish.name,
+                        style: titleStyle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (dish.description?.trim().isNotEmpty == true) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          dish.description!,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          style: VMTextStyles.body.xL.copyWith(
+                            color: VMColorTheme.black70,
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       Text(formatRupiah(dish.price), style: titleStyle),
                       const SizedBox(height: 24),
@@ -153,7 +170,7 @@ class MenuDishCard extends StatelessWidget {
               ],
             ),
           ),
-          if (dish.isBestSeller)
+          if (dish.isBestSeller == true)
             Positioned(
               left: 0,
               top: 24,
