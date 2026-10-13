@@ -1,4 +1,6 @@
+import 'package:vm_ui/features/menu_selection/domain/load_menu.dart';
 import 'package:flutter/material.dart';
+import 'package:vm_ui/features/menu_selection/presentation/menu_selection_page.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vm_ui/core/ui_kit/buttons/buttons.dart';
 import 'package:vm_ui/core/ui_kit/containers/footer_content.dart';
@@ -7,7 +9,9 @@ import 'package:vm_ui/core/ui_kit/themes/typography.dart';
 import 'package:vm_ui/features/splash/presentation/widgets/hero_dishes.dart';
 
 class SplashPage extends StatelessWidget {
-  const SplashPage({super.key});
+  const SplashPage({required this.loadMenu, super.key});
+
+  final LoadMenu loadMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +91,12 @@ class SplashPage extends StatelessWidget {
                         children: [
                           VMButton(
                             label: 'Sentuh Untuk Memulai Pesanan',
-                            onPressed: () {},
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    MenuSelectionPage(loadMenu: loadMenu),
+                              ),
+                            ),
                             size: VMButtonSize.large,
                             expand: true,
                           ),

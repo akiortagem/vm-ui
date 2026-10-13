@@ -21,6 +21,7 @@ class VMButton extends StatelessWidget {
     this.autofocus = false,
     this.focusNode,
     this.semanticLabel,
+    this.style,
     super.key,
   });
 
@@ -32,6 +33,7 @@ class VMButton extends StatelessWidget {
     this.autofocus = false,
     this.focusNode,
     this.semanticLabel,
+    this.style,
     super.key,
   }) : variant = VMButtonVariant.outlined;
 
@@ -46,6 +48,9 @@ class VMButton extends StatelessWidget {
   final FocusNode? focusNode;
   final String? semanticLabel;
 
+  /// Optional screen-specific overrides for the shared button treatment.
+  final ButtonStyle? style;
+
   @override
   Widget build(BuildContext context) {
     final dimensions = _ButtonDimensions.from(size);
@@ -53,7 +58,7 @@ class VMButton extends StatelessWidget {
       onPressed: onPressed,
       autofocus: autofocus,
       focusNode: focusNode,
-      style: _style(dimensions),
+      style: style?.merge(_style(dimensions)) ?? _style(dimensions),
       child: Text(label),
     );
 
@@ -95,6 +100,7 @@ class VMButton extends StatelessWidget {
       ),
       textStyle: WidgetStatePropertyAll(
         TextStyle(
+          fontFamily: 'Figtree',
           fontSize: dimensions.fontSize,
           fontWeight: FontWeight.w600,
           height: 1.2,
