@@ -1,6 +1,5 @@
 #include "my_application.h"
 
-#include <cstdlib>
 #include <cstring>
 #include <flutter_linux/flutter_linux.h>
 #include "flutter/generated_plugin_registrant.h"
@@ -8,6 +7,7 @@
 struct _MyApplication {
   GtkApplication parent_instance;
   char** dart_entrypoint_arguments;
+  bool live_mode;
 };
 
 G_DEFINE_TYPE(MyApplication, my_application, GTK_TYPE_APPLICATION)
@@ -25,11 +25,11 @@ static void my_application_activate(GApplication* application) {
       GTK_WINDOW(gtk_application_window_new(GTK_APPLICATION(application)));
 
   gtk_window_set_title(window, "vm_ui");
-  gtk_window_set_decorated(window, FALSE);
-  gtk_window_set_default_size(window, 540, 960);
+  gtk_window_set_decorated(window, !self->live_mode);
+  gtk_window_set_default_size(
+      window, self->live_mode ? 1080 : 540, self->live_mode ? 1920 : 960);
 
-  const char* kiosk_mode = std::getenv("VM_UI_KIOSK_MODE");
-  if (kiosk_mode != nullptr && std::strcmp(kiosk_mode, "1") == 0) {
+  if (self->live_mode) {
     gtk_window_fullscreen(window);
   }
 
@@ -57,8 +57,22 @@ static void my_application_activate(GApplication* application) {
 // Implements GApplication::local_command_line.
 static gboolean my_application_local_command_line(GApplication* application, gchar*** arguments, int* exit_status) {
   MyApplication* self = MY_APPLICATION(application);
-  // Strip out the first argument as it is the binary name.
-  self->dart_entrypoint_arguments = g_strdupv(*arguments + 1);
+  g_clear_pointer(&self->dart_entrypoint_arguments, g_strfreev);
+  self->live_mode = false;
+
+  // Strip out the binary name and consume native runner arguments before
+  // forwarding any remaining arguments to Dart.
+  g_autoptr(GPtrArray) dart_arguments = g_ptr_array_new_with_free_func(g_free);
+  for (gchar** argument = *arguments + 1; *argument != nullptr; ++argument) {
+    if (std::strcmp(*argument, "--live") == 0) {
+      self->live_mode = true;
+    } else {
+      g_ptr_array_add(dart_arguments, g_strdup(*argument));
+    }
+  }
+  g_ptr_array_add(dart_arguments, nullptr);
+  self->dart_entrypoint_arguments = reinterpret_cast<char**>(
+      g_ptr_array_free(g_steal_pointer(&dart_arguments), FALSE));
 
   g_autoptr(GError) error = nullptr;
   if (!g_application_register(application, nullptr, &error)) {

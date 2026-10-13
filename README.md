@@ -2,9 +2,10 @@
 
 Flutter UI for a portrait kiosk display.
 
-The app uses a fixed 1080 × 1920 (9:16) design canvas. On development
-machines, the canvas is scaled into a 540 × 960 window. On the kiosk, it can
-run borderless and fullscreen by enabling kiosk mode.
+The app uses a fixed 1080 × 1920 (9:16) design canvas. By default, including
+when running a built executable, the canvas is scaled into a decorated 540 ×
+960 development window. Pass `--live` to run borderless and fullscreen on the
+intended portrait display.
 
 ## Development
 
@@ -14,7 +15,7 @@ Run the app in a resizable desktop window:
 flutter run -d linux
 ```
 
-Kiosk mode is off by default, so closing and moving the window remains
+Live mode is off by default, so closing, moving, and resizing the window remains
 convenient during development.
 
 ## Build and run on a Linux kiosk
@@ -37,19 +38,19 @@ libraries and data stored alongside it, so copying only the `vm_ui` file is not
 enough.
 
 Set the kiosk screen to portrait orientation in the operating system, then
-enable fullscreen kiosk mode by setting `VM_UI_KIOSK_MODE=1` when launching:
+enable live mode with the `--live` argument:
 
 ```bash
 cd /path/to/bundle
-VM_UI_KIOSK_MODE=1 ./vm_ui
+./vm_ui --live
 ```
 
-Kiosk mode makes the app borderless and fullscreen on the current display. The
+Live mode makes the app borderless and fullscreen on the current display. The
 1080 × 1920 canvas renders at 1:1 on a matching screen. Other resolutions are
 scaled uniformly, with letterboxing if the display is not 9:16.
 
-To return to windowed mode, close the app and launch it without the environment
-variable:
+To return to the development window, close the app and launch it without the
+argument:
 
 ```bash
 ./vm_ui
@@ -57,11 +58,10 @@ variable:
 
 ### Example kiosk launcher
 
-For an autostart entry or service, use an absolute path and set the environment
-variable as part of the launch command:
+For an autostart entry or service, use an absolute path and pass the argument:
 
 ```bash
-env VM_UI_KIOSK_MODE=1 /opt/vm-ui/bundle/vm_ui
+/opt/vm-ui/bundle/vm_ui --live
 ```
 
 The graphical desktop session and portrait display configuration must be ready
@@ -102,18 +102,15 @@ build\windows\x64\runner\Release
 ```
 
 Copy that complete directory to the kiosk. From PowerShell in the copied
-directory, enable kiosk mode for the process and launch the app:
+directory, enable live mode with the argument:
 
 ```powershell
-$env:VM_UI_KIOSK_MODE = "1"
-.\vm_ui.exe
+.\vm_ui.exe --live
 ```
 
-The environment setting lasts for the current PowerShell session. To launch
-normally in that session:
+To launch in the default development window instead:
 
 ```powershell
-Remove-Item Env:VM_UI_KIOSK_MODE
 .\vm_ui.exe
 ```
 
