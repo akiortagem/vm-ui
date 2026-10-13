@@ -122,7 +122,8 @@ Win32Window::~Win32Window() {
 
 bool Win32Window::Create(const std::wstring& title,
                          const Point& origin,
-                         const Size& size) {
+                         const Size& size,
+                         bool decorated) {
   Destroy();
 
   const wchar_t* window_class =
@@ -134,12 +135,17 @@ bool Win32Window::Create(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  // Use a popup window so the Flutter surface fills the entire window without
-  // a native title bar or border.
+  const DWORD window_style = decorated ? WS_OVERLAPPEDWINDOW : WS_POPUP;
+  RECT window_rect = {
+      0, 0, Scale(size.width, scale_factor), Scale(size.height, scale_factor)};
+  if (decorated) {
+    AdjustWindowRectExForDpi(&window_rect, window_style, FALSE, 0, dpi);
+  }
+
   HWND window = CreateWindow(
-      window_class, title.c_str(), WS_POPUP,
+      window_class, title.c_str(), window_style,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
-      Scale(size.width, scale_factor), Scale(size.height, scale_factor),
+      window_rect.right - window_rect.left, window_rect.bottom - window_rect.top,
       nullptr, nullptr, GetModuleHandle(nullptr), this);
 
   if (!window) {

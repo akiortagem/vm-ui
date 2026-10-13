@@ -1,0 +1,78 @@
+name: Build Windows
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+concurrency:
+  group: windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Windows release
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.35.4
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build Windows release
+        shell: pwsh
+        run: |
+          $arguments = @('build', 'windows', '--release')
+          if ($env:API_BASE_URL) {
+            $arguments += "--dart-define=API_BASE_URL=$env:API_BASE_URL"
+          }
+          flutter @arguments
+
+      - name: Upload Windows release
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm-ui-windows-x64
+          path: build/windows/x64/runner/Release/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Package Windows release
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          $archive = "vm-ui-windows-x64-$env:RELEASE_TAG.zip"
+          Compress-Archive `
+            -Path 'build/windows/x64/runner/Release/*' `
+            -DestinationPath $archive
+
+      - name: Attach Windows build to GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload $env:RELEASE_TAG `
+            "vm-ui-windows-x64-$env:RELEASE_TAG.zip" `
+            --clobber
