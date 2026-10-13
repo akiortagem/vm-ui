@@ -12,6 +12,10 @@ void main() {
   testWidgets('capture menu states', (tester) async {
     tester.view.physicalSize = const Size(1080, 1920);
     tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final directory = Directory.systemTemp.createTempSync('vm-menu-capture-');
+    addTearDown(() => directory.deleteSync(recursive: true));
     final loader = FontLoader('Figtree')
       ..addFont(
         rootBundle.load('lib/core/ui_kit/assets/fonts/Figtree-Variable.ttf'),
@@ -51,7 +55,7 @@ void main() {
         final capture = await boundary.toImage(pixelRatio: 0.5);
         final bytes = await capture.toByteData(format: ui.ImageByteFormat.png);
         await File(
-          '/tmp/menu-selected-$limit.png',
+          '${directory.path}${Platform.pathSeparator}menu-selected-$limit.png',
         ).writeAsBytes(bytes!.buffer.asUint8List());
         capture.dispose();
       });

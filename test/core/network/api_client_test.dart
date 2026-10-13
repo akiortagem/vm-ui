@@ -26,6 +26,60 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test(
+    'embedded credentials seed once and preserve rotation on restart',
+    () async {
+      final store = MemoryStore()..value = null;
+      final first = await ApiClient.create(
+        baseUrl: 'https://example.test',
+        machineId: '12',
+        token: 'old',
+        refreshToken: 'refresh-old',
+        credentialStore: store,
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/refresh')) {
+            return http.Response(
+              '{"token":"new","refresh_token":"rotated"}',
+              200,
+            );
+          }
+          return http.Response(
+            '{}',
+            request.headers['authorization'] == 'Bearer old' ? 401 : 200,
+          );
+        }),
+      );
+      addTearDown(first.close);
+      expect(store.value!.token, 'old');
+      await first.get('items');
+      expect(store.value!.refreshToken, 'rotated');
+      final restarted = await ApiClient.create(
+        baseUrl: 'https://example.test',
+        machineId: '12',
+        token: 'old',
+        refreshToken: 'refresh-old',
+        credentialStore: store,
+        client: MockClient((request) async {
+          if (request.url.path.endsWith('/refresh')) {
+            expect(jsonDecode(request.body)['refresh_token'], 'rotated');
+            return http.Response(
+              '{"token":"latest","refresh_token":"latest-refresh"}',
+              200,
+            );
+          }
+          return http.Response(
+            '{}',
+            request.headers['authorization'] == 'Bearer new' ? 401 : 200,
+          );
+        }),
+      );
+      addTearDown(restarted.close);
+      expect(store.value!.refreshToken, 'rotated');
+      await restarted.get('items');
+      expect(store.value!.refreshToken, 'latest-refresh');
+    },
+  );
+
+  test(
     'secure store restores the complete session in another instance',
     () async {
       FlutterSecureStorage.setMockInitialValues({});

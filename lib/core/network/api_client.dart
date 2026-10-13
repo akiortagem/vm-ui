@@ -122,8 +122,9 @@ class ApiClient {
     final store =
         credentialStore ??
         SecureCredentialStore(key: 'vm_ui.machine_credentials.$uri');
-    final credentials = suppliedCredentials ?? await store.read();
-    if (suppliedCredentials != null) {
+    final storedCredentials = await store.read();
+    final credentials = storedCredentials ?? suppliedCredentials;
+    if (storedCredentials == null && suppliedCredentials != null) {
       await store.write(suppliedCredentials);
     }
     return ApiClient._(uri, client ?? http.Client(), store, timeout)

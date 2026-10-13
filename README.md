@@ -130,7 +130,7 @@ methods, plus `request` for other methods. Set the complete base URL including
 any API route prefix at build time:
 
 ```bash
-flutter run -d linux --dart-define=API_BASE_URL=http://localhost:8080/api
+flutter run -d linux --dart-define=API_BASE_URL=http://localhost:8080
 flutter build linux --release --dart-define=API_BASE_URL=https://cms.example.com/api
 ```
 
@@ -200,19 +200,21 @@ Linux builds and mocked storage tests do not validate the Windows implementation
 
 ### Optional machine credentials at launch
 
-To provision or replace the stored machine session:
+To provision a machine session when none is stored:
 
 ```bash
 flutter run -d linux \
-  --dart-define=API_BASE_URL=http://localhost:8080/api \
+  --dart-define=API_BASE_URL=http://localhost:8080 \
   --dart-define=VM_ID=7 \
   --dart-define=VM_ACCESS_TOKEN=your-access-token \
   --dart-define=VM_REFRESH_TOKEN=your-refresh-token
 ```
 
 The three credential settings are optional as a group. If supplying any, supply
-all three; `VM_ID` must be a positive integer. Supplied credentials replace the
-session in secure storage for the configured CMS address. Omit all three on
-subsequent runs to reuse the stored session, including rotated refresh tokens.
+all three; `VM_ID` must be a positive integer. Supplied credentials seed secure
+storage only when no session exists for the configured CMS address. An existing
+session takes precedence, preserving rotated tokens across restarts even with
+the same build. To deliberately replace a session, use `setCredentials` through
+the pairing flow, or clear the stored session before provisioning again.
 These are build-time Dart defines and are embedded in the resulting app; do not
 ship a shared build containing machine credentials.

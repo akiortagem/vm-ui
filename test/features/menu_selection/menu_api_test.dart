@@ -121,6 +121,50 @@ void main() {
     );
   }
 
+  testWidgets(
+    'stock limits selection and quantity changes clear invalid orders',
+    (tester) async {
+      canvas(tester);
+      final load = LoadMenu(
+        _Repository(
+          () async => [
+            const MenuDish(name: 'Sold out', price: 1000, stockQuantity: 0),
+            const MenuDish(name: 'Low stock', price: 2000, stockQuantity: 1),
+            const MenuDish(name: 'Available', price: 3000, stockQuantity: 2),
+          ],
+        ),
+      );
+      List<MenuDish>? checkout;
+      Widget page(int quantity) => MaterialApp(
+        home: MenuSelectionPage(
+          loadMenu: load,
+          quantityPerItem: quantity,
+          onCheckout: (items) => checkout = items,
+        ),
+      );
+      await tester.pumpWidget(page(2));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pesan').at(0));
+      await tester.tap(find.text('Pesan').at(1));
+      await tester.pump();
+      expect(find.text('Rp 0'), findsOneWidget);
+      await tester.tap(find.text('Pesan').at(2));
+      await tester.pump();
+      expect(find.text('Rp 6.000'), findsOneWidget);
+      await tester.tap(find.text('Bayar Sekarang'));
+      expect(checkout!.map((dish) => dish.name), ['Available', 'Available']);
+      await tester.tap(find.byTooltip('Hapus Available'));
+      await tester.pump();
+      expect(find.text('Rp 0'), findsOneWidget);
+      await tester.tap(find.text('Pesan').at(2));
+      await tester.pump();
+      await tester.pumpWidget(page(3));
+      expect(find.text('Rp 0'), findsOneWidget);
+      expect(find.byTooltip('Hapus Available'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('loading failure displays technician screen', (tester) async {
     canvas(tester);
     final pending = Completer<List<MenuDish>>();

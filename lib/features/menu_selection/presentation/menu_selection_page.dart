@@ -64,10 +64,15 @@ class _MenuSelectionPageState extends State<MenuSelectionPage> {
   @override
   void didUpdateWidget(covariant MenuSelectionPage oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _order.removeWhere((dish) => !_hasStock(dish));
     if (_order.length > widget.maxSelectedItems) {
       _order.removeRange(widget.maxSelectedItems, _order.length);
     }
   }
+
+  bool _hasStock(MenuDish dish) =>
+      dish.stockQuantity == null ||
+      dish.stockQuantity! >= widget.quantityPerItem;
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +164,8 @@ class _MenuSelectionPageState extends State<MenuSelectionPage> {
                             quantity: widget.quantityPerItem,
                             onOrder:
                                 !_order.contains(_dishes[index]) &&
-                                    _order.length >= widget.maxSelectedItems
+                                    (_order.length >= widget.maxSelectedItems ||
+                                        !_hasStock(_dishes[index]))
                                 ? null
                                 : () => setState(() {
                                     final dish = _dishes[index];
