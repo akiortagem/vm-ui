@@ -24,6 +24,23 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Validate API base URL
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:API_BASE_URL)) {
+            throw 'Repository variable API_BASE_URL must be configured for release builds.'
+          }
+
+          $uri = $null
+          if (-not [Uri]::TryCreate($env:API_BASE_URL, [UriKind]::Absolute, [ref]$uri) -or
+              $uri.Scheme -notin @('http', 'https') -or
+              [string]::IsNullOrWhiteSpace($uri.Host) -or
+              -not [string]::IsNullOrEmpty($uri.UserInfo) -or
+              -not [string]::IsNullOrEmpty($uri.Query) -or
+              -not [string]::IsNullOrEmpty($uri.Fragment)) {
+            throw 'Repository variable API_BASE_URL must be an absolute HTTP(S) base URL without credentials, a query, or a fragment.'
+          }
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -43,11 +60,8 @@ jobs:
       - name: Build Windows release
         shell: pwsh
         run: |
-          $arguments = @('build', 'windows', '--release')
-          if ($env:API_BASE_URL) {
-            $arguments += "--dart-define=API_BASE_URL=$env:API_BASE_URL"
-          }
-          flutter @arguments
+          flutter build windows --release `
+            "--dart-define=API_BASE_URL=$env:API_BASE_URL"
 
       - name: Upload Windows release
         uses: actions/upload-artifact@v4
