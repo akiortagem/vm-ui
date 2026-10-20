@@ -55,7 +55,15 @@ void main() {
                   'name': 'Menu API',
                   'price': 31000,
                   'stock_quantity': 0,
-                  'image_url': '/uploads/dish.png',
+                  'image_path': '/uploads/dish.png',
+                },
+                {
+                  'id': 3,
+                  'vending_machine_product_id': 13,
+                  'name': 'No Image',
+                  'price': 20000,
+                  'stock_quantity': 1,
+                  'image_path': '   ',
                 },
               ],
             }),
@@ -64,15 +72,20 @@ void main() {
         }),
       );
       addTearDown(api.close);
-      final dish = (await ApiMenuRepository(() async => api).loadMenu()).single;
+      final dishes = await ApiMenuRepository(
+        () async => api,
+        mediaServerUrl: 'https://media.example/assets',
+      ).loadMenu();
+      final dish = dishes.first;
       expect(dish.name, 'Menu API');
       expect(dish.price, 31000);
       expect(dish.id, 2);
       expect(dish.vendingMachineProductId, 12);
       expect(dish.stockQuantity, 0);
-      expect(dish.imageUrl, 'https://cms.example/uploads/dish.png');
+      expect(dish.imageUrl, 'https://media.example/assets/uploads/dish.png');
       expect(dish.description, isNull);
       expect(dish.isBestSeller, isNull);
+      expect(dishes.last.imageUrl, isNull);
     },
   );
 

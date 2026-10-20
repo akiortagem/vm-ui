@@ -78,16 +78,20 @@ SDK and C++ build tools. Also install the **C++ ATL for latest build tools
 See [Flutter Windows setup](https://docs.flutter.dev/platform-integration/windows/setup)
 and the [Windows secure-storage plugin requirements](https://pub.dev/packages/flutter_secure_storage_windows/versions/4.1.0).
 
-Validate the toolchain, install dependencies, and build with the API base URL:
+Validate the toolchain, install dependencies, and build with the API and media
+server base URLs:
 
 ```powershell
 flutter doctor -v
 flutter pub get
-flutter build windows --release --dart-define=API_BASE_URL=https://cms.example.com/api
+flutter build windows --release `
+  --dart-define=API_BASE_URL=https://cms.example.com/api `
+  --dart-define=MEDIA_SERVER_URL=https://media.example.com
 ```
 
-Replace the example URL with the actual API base URL, including its route prefix.
-`API_BASE_URL` is a build-time setting; changing it requires rebuilding the app.
+Replace the example URLs with the actual API base URL (including its route
+prefix) and media server URL. Both values are build-time settings; changing
+either requires rebuilding the app.
 
 ### Kiosk requirements and launch
 
@@ -127,8 +131,12 @@ methods, plus `request` for other methods. Set the complete base URL including
 any API route prefix at build time:
 
 ```bash
-flutter run -d linux --dart-define=API_BASE_URL=http://localhost:8080
-flutter build linux --release --dart-define=API_BASE_URL=https://cms.example.com/api
+flutter run -d linux \
+  --dart-define=API_BASE_URL=http://localhost:8080 \
+  --dart-define=MEDIA_SERVER_URL=http://localhost:8080
+flutter build linux --release \
+  --dart-define=API_BASE_URL=https://cms.example.com/api \
+  --dart-define=MEDIA_SERVER_URL=https://media.example.com
 ```
 
 Initialize Flutter bindings before creating the client, and reuse one client per
@@ -197,8 +205,9 @@ Linux builds and mocked storage tests do not validate the Windows implementation
 
 ### Machine credential provisioning
 
-Build the shared application with `API_BASE_URL`, then provision credentials on
-the target kiosk by passing them to the built executable once. On Windows:
+Build the shared application with `API_BASE_URL` and `MEDIA_SERVER_URL`, then
+provision credentials on the target kiosk by passing them to the built
+executable once. On Windows:
 
 ```powershell
 .\vm_ui.exe `
