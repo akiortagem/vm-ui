@@ -83,9 +83,8 @@ class ApiClient {
 
   static Future<ApiClient> create({
     String baseUrl = const String.fromEnvironment('API_BASE_URL'),
-    String machineId = const String.fromEnvironment('VM_ID'),
-    String token = const String.fromEnvironment('VM_ACCESS_TOKEN'),
-    String refreshToken = const String.fromEnvironment('VM_REFRESH_TOKEN'),
+    MachineCredentials? initialCredentials,
+    bool replaceCredentials = false,
     http.Client? client,
     CredentialStore? credentialStore,
     Duration timeout = const Duration(seconds: 30),
@@ -101,31 +100,20 @@ class ApiClient {
     if (timeout <= Duration.zero) {
       throw ArgumentError('Timeout must be positive');
     }
-    MachineCredentials? suppliedCredentials;
-    if ([machineId, token, refreshToken].any((value) => value.isNotEmpty)) {
-      final parsedId = int.tryParse(machineId);
-      if (parsedId == null ||
-          parsedId <= 0 ||
-          token.trim().isEmpty ||
-          refreshToken.trim().isEmpty) {
-        throw ArgumentError(
-          'Provide VM_ID (positive integer), VM_ACCESS_TOKEN, and '
-          'VM_REFRESH_TOKEN together, or omit all three',
-        );
-      }
-      suppliedCredentials = MachineCredentials(
-        machineId: parsedId,
-        token: token,
-        refreshToken: refreshToken,
+    if (replaceCredentials && initialCredentials == null) {
+      throw ArgumentError(
+        'Initial credentials are required when replacing credentials',
       );
     }
     final store =
         credentialStore ??
         SecureCredentialStore(key: 'vm_ui.machine_credentials.$uri');
     final storedCredentials = await store.read();
-    final credentials = storedCredentials ?? suppliedCredentials;
-    if (storedCredentials == null && suppliedCredentials != null) {
-      await store.write(suppliedCredentials);
+    var credentials = storedCredentials;
+    if (initialCredentials != null &&
+        (storedCredentials == null || replaceCredentials)) {
+      await store.write(initialCredentials);
+      credentials = initialCredentials;
     }
     return ApiClient._(uri, client ?? http.Client(), store, timeout)
       .._credentials = credentials;

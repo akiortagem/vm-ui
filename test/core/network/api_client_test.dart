@@ -26,14 +26,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test(
-    'embedded credentials seed once and preserve rotation on restart',
+    'initial credentials seed once and preserve rotation on restart',
     () async {
       final store = MemoryStore()..value = null;
       final first = await ApiClient.create(
         baseUrl: 'https://example.test',
-        machineId: '12',
-        token: 'old',
-        refreshToken: 'refresh-old',
+        initialCredentials: MachineCredentials(
+          machineId: 12,
+          token: 'old',
+          refreshToken: 'refresh-old',
+        ),
         credentialStore: store,
         client: MockClient((request) async {
           if (request.url.path.endsWith('/refresh')) {
@@ -54,9 +56,11 @@ void main() {
       expect(store.value!.refreshToken, 'rotated');
       final restarted = await ApiClient.create(
         baseUrl: 'https://example.test',
-        machineId: '12',
-        token: 'old',
-        refreshToken: 'refresh-old',
+        initialCredentials: MachineCredentials(
+          machineId: 12,
+          token: 'old',
+          refreshToken: 'refresh-old',
+        ),
         credentialStore: store,
         client: MockClient((request) async {
           if (request.url.path.endsWith('/refresh')) {
@@ -92,6 +96,27 @@ void main() {
       expect(await store.read(), isNull);
     },
   );
+
+  test('replacement credentials overwrite the stored session', () async {
+    final store = MemoryStore();
+    final replacement = MachineCredentials(
+      machineId: 24,
+      token: 'replacement',
+      refreshToken: 'replacement-refresh',
+    );
+
+    final api = await ApiClient.create(
+      baseUrl: 'https://example.test',
+      initialCredentials: replacement,
+      replaceCredentials: true,
+      credentialStore: store,
+      client: MockClient((_) async => http.Response('{}', 200)),
+    );
+    addTearDown(api.close);
+
+    expect(api.machineId, 24);
+    expect(store.value, same(replacement));
+  });
 
   test(
     'JSON requests preserve prefix, query, headers and empty responses',
