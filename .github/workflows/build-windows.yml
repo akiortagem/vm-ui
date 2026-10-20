@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 30
     env:
       API_BASE_URL: ${{ vars.API_BASE_URL }}
+      MEDIA_SERVER_URL: ${{ vars.MEDIA_SERVER_URL }}
 
     steps:
       - name: Check out repository
@@ -41,6 +42,23 @@ jobs:
             throw 'Repository variable API_BASE_URL must be an absolute HTTP(S) base URL without credentials, a query, or a fragment.'
           }
 
+      - name: Validate media server URL
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:MEDIA_SERVER_URL)) {
+            throw 'Repository variable MEDIA_SERVER_URL must be configured for release builds.'
+          }
+
+          $uri = $null
+          if (-not [Uri]::TryCreate($env:MEDIA_SERVER_URL, [UriKind]::Absolute, [ref]$uri) -or
+              $uri.Scheme -notin @('http', 'https') -or
+              [string]::IsNullOrWhiteSpace($uri.Host) -or
+              -not [string]::IsNullOrEmpty($uri.UserInfo) -or
+              -not [string]::IsNullOrEmpty($uri.Query) -or
+              -not [string]::IsNullOrEmpty($uri.Fragment)) {
+            throw 'Repository variable MEDIA_SERVER_URL must be an absolute HTTP(S) base URL without credentials, a query, or a fragment.'
+          }
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -61,7 +79,8 @@ jobs:
         shell: pwsh
         run: |
           flutter build windows --release `
-            "--dart-define=API_BASE_URL=$env:API_BASE_URL"
+            "--dart-define=API_BASE_URL=$env:API_BASE_URL" `
+            "--dart-define=MEDIA_SERVER_URL=$env:MEDIA_SERVER_URL"
 
       - name: Upload Windows release
         uses: actions/upload-artifact@v4
