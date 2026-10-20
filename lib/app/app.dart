@@ -8,9 +8,10 @@ import 'package:vm_ui/core/constants/app_constants.dart';
 import 'package:vm_ui/features/splash/presentation/splash_page.dart';
 
 class VmUiApp extends StatefulWidget {
-  const VmUiApp({this.loadMenu, super.key});
+  const VmUiApp({this.loadMenu, this.apiClient, super.key});
 
   final LoadMenu? loadMenu;
+  final ApiClient? apiClient;
 
   static const designSize = Size(1080, 1920);
 
@@ -23,6 +24,14 @@ class _VmUiAppState extends State<VmUiApp> {
   late final LoadMenu _loadMenu =
       widget.loadMenu ??
       LoadMenu(ApiMenuRepository(() => _client ??= ApiClient.create()));
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.apiClient case final client?) {
+      _client = Future.value(client);
+    }
+  }
 
   @override
   void dispose() {

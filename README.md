@@ -195,23 +195,33 @@ not transfer an existing paired session to another account or machine.
 Windows build and native credential persistence must be verified on Windows;
 Linux builds and mocked storage tests do not validate the Windows implementation.
 
-### Optional machine credentials at launch
+### Machine credential provisioning
 
-To provision a machine session when none is stored:
+Build the shared application with `API_BASE_URL`, then provision credentials on
+the target kiosk by passing them to the built executable once. On Windows:
 
-```bash
-flutter run -d linux \
-  --dart-define=API_BASE_URL=http://localhost:8080 \
-  --dart-define=VM_ID=7 \
-  --dart-define=VM_ACCESS_TOKEN=your-access-token \
-  --dart-define=VM_REFRESH_TOKEN=your-refresh-token
+```powershell
+.\vm_ui.exe `
+  --vm-id 7 `
+  --access-token "your-access-token" `
+  --refresh-token "your-refresh-token"
 ```
 
-The three credential settings are optional as a group. If supplying any, supply
-all three; `VM_ID` must be a positive integer. Supplied credentials seed secure
-storage only when no session exists for the configured CMS address. An existing
-session takes precedence, preserving rotated tokens across restarts even with
-the same build. To deliberately replace a session, use `setCredentials` through
-the pairing flow, or clear the stored session before provisioning again.
-These are build-time Dart defines and are embedded in the resulting app; do not
-ship a shared build containing machine credentials.
+On Linux:
+
+```bash
+./vm_ui \
+  --vm-id 7 \
+  --access-token 'your-access-token' \
+  --refresh-token 'your-refresh-token'
+```
+
+All three arguments must be supplied together, and `--vm-id` must be a positive
+integer. The credentials seed secure storage only when no session exists for
+the configured CMS address. This preserves refreshed tokens on later launches.
+To deliberately replace an existing session, supply the same three arguments
+with `--replace-credentials`.
+
+Command-line values can be visible in shell history and process inspection.
+After provisioning succeeds, close the app and launch it again without the
+credential arguments; subsequent launches restore the secure stored session.
